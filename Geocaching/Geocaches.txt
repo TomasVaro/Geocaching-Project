@@ -1,0 +1,7 @@
+﻿Jakob | Kallin | Sweden | Göteborg | Anders Personsgatan | 17 | 57.709917 | 11.994034
+57.692847 | 12.058648 | Jakob's first geocache contents | Jakob's first geocache message
+57.704374 | 11.989266 | Jakob's second geocache contents | Jakob's second geocache message
+
+Brad | Pitt | Sweden | Göteborg | Drottningatan | 18 | 57.705178 | 11.965377
+57.712394 | 12.005746 | Brad's first geocache contents | Brad's first geocache message
+57.706712 | 11.976220 | Brad's second geocache contents | Brad's second geocache message
