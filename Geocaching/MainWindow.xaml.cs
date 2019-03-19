@@ -2,6 +2,7 @@
 using Microsoft.Maps.MapControl.WPF;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,10 +37,65 @@ namespace Geocaching
 
         class AppDbContext : DbContext
         {
+            public DbSet<Person> Person { get; set; }
+            public DbSet<Geocache> Geocache { get; set; }
             protected override void OnConfiguring(DbContextOptionsBuilder options)
             {
                 options.UseSqlServer(@"Data Source=(local)\SQLEXPRESS;Initial Catalog=Geocaching;Integrated Security=True");
             }
+        }
+
+        public class Person
+        {
+            [Key]
+            public int ID { get; set; }
+            [Required]
+            [MaxLength(50)]
+            public string FirstName { get; set; }
+            [Required]
+            [MaxLength(50)]
+            public string LastName { get; set; }
+            [Required]
+            public float Latitude { get; set; }
+            [Required]
+            public float Longitude { get; set; }
+            [Required]
+            [MaxLength(50)]
+            public string Country { get; set; }
+            [Required]
+            [MaxLength(50)]
+            public string City { get; set; }
+            [Required]
+            [MaxLength(50)]
+            public string StreetName { get; set; }
+            [Required]
+            public byte StreetNumber { get; set; }
+        }
+
+        public class Geocache
+        {
+            [Key]
+            public int ID { get; set; }
+            public Person Person { get; set; }
+            [Required]
+            public float Latitude { get; set; }
+            [Required]
+            public float Longitude { get; set; }
+            [Required]
+            [MaxLength(355)]
+            public string Content { get; set; }
+            [Required]
+            [MaxLength(255)]
+            public string Message { get; set; }
+
+        }
+
+        public class FoundGeocache
+        {
+            public int PersonID { get; set; }
+            public Person Person { get; set; }
+            public int GeocaheID { get; set; }
+            public Geocache Geocache { get; set; }
         }
 
         public MainWindow()
@@ -50,6 +106,7 @@ namespace Geocaching
 
         private void Start()
         {
+            //Gör att komma och punkt inte ställer till med problem
             System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
             if (applicationId == null)
@@ -60,12 +117,14 @@ namespace Geocaching
 
             CreateMap();
 
+            //Härifrån anropas databasen
             using (var db = new AppDbContext())
             {
                 // Load data from database and populate map here.
             }
         }
 
+        //Behöver inte göras något här
         private void CreateMap()
         {
             map.CredentialsProvider = new ApplicationIdCredentialsProvider(applicationId);
@@ -118,11 +177,13 @@ namespace Geocaching
                 return;
             }
 
+            //Här skapas geocach objektet som sedan kan sparas i databasen
             string contents = dialog.GeocacheContents;
             string message = dialog.GeocacheMessage;
             // Add geocache to map and database here.
             var pin = AddPin(latestClickLocation, "Person", Colors.Gray);
 
+            //En eventhandler. Denna kod körs om man klickar på markören för en geocach
             pin.MouseDown += (s, a) =>
             {
                 // Handle click on geocache pin here.
@@ -134,6 +195,7 @@ namespace Geocaching
             };
         }
 
+        //Här läggs personuppgifterna in
         private void OnAddPersonClick(object sender, RoutedEventArgs args)
         {
             var dialog = new PersonDialog();
@@ -162,6 +224,7 @@ namespace Geocaching
             };
         }
 
+        //Skapar en pin med färg
         private Pushpin AddPin(Location location, string tooltip, Color color)
         {
             var pin = new Pushpin();
@@ -173,6 +236,7 @@ namespace Geocaching
             return pin;
         }
 
+        //Läser in från en fil
         private void OnLoadFromFileClick(object sender, RoutedEventArgs args)
         {
             var dialog = new Microsoft.Win32.OpenFileDialog();
@@ -188,6 +252,7 @@ namespace Geocaching
             // Read the selected file here.
         }
 
+        //Sparar till en fil
         private void OnSaveToFileClick(object sender, RoutedEventArgs args)
         {
             var dialog = new Microsoft.Win32.SaveFileDialog();
