@@ -26,6 +26,10 @@ namespace Geocaching
         {
             options.UseSqlServer(@"Data Source=(local)\SQLEXPRESS;Initial Catalog=Geocaching;Integrated Security=True");
         }
+        protected override void OnModelCreating(ModelBuilder model)
+        {
+            model.Entity<FoundGeocache>().HasKey(ap => new { ap.PersonID, ap.GeocacheID });
+        }
     }
 
     public class Person
@@ -53,6 +57,7 @@ namespace Geocaching
         public string StreetName { get; set; }
         [Required]
         public byte StreetNumber { get; set; }
+        public List<FoundGeocache> FoundGeocache { get; set; }
     }
 
     public class Geocache
@@ -70,13 +75,14 @@ namespace Geocaching
         [Required]
         [MaxLength(255)]
         public string Message { get; set; }
+        public List<FoundGeocache> FoundGeocache { get; set; }
     }
 
     public class FoundGeocache
     {
         public int PersonID { get; set; }
         public Person Person { get; set; }
-        public int GeocaheID { get; set; }
+        public int GeocacheID { get; set; }
         public Geocache Geocache { get; set; }
     }
 
