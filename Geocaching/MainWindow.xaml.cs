@@ -18,6 +18,68 @@ using System.Windows.Shapes;
 
 namespace Geocaching
 {
+    class AppDbContext : DbContext
+    {
+        public DbSet<Person> Person { get; set; }
+        public DbSet<Geocache> Geocache { get; set; }
+        protected override void OnConfiguring(DbContextOptionsBuilder options)
+        {
+            options.UseSqlServer(@"Data Source=(local)\SQLEXPRESS;Initial Catalog=Geocaching;Integrated Security=True");
+        }
+    }
+
+    public class Person
+    {
+        [Key]
+        public int ID { get; set; }
+        [Required]
+        [MaxLength(50)]
+        public string FirstName { get; set; }
+        [Required]
+        [MaxLength(50)]
+        public string LastName { get; set; }
+        [Required]
+        public float Latitude { get; set; }
+        [Required]
+        public float Longitude { get; set; }
+        [Required]
+        [MaxLength(50)]
+        public string Country { get; set; }
+        [Required]
+        [MaxLength(50)]
+        public string City { get; set; }
+        [Required]
+        [MaxLength(50)]
+        public string StreetName { get; set; }
+        [Required]
+        public byte StreetNumber { get; set; }
+    }
+
+    public class Geocache
+    {
+        [Key]
+        public int ID { get; set; }
+        public Person Person { get; set; }
+        [Required]
+        public float Latitude { get; set; }
+        [Required]
+        public float Longitude { get; set; }
+        [Required]
+        [MaxLength(255)]
+        public string Content { get; set; }
+        [Required]
+        [MaxLength(255)]
+        public string Message { get; set; }
+    }
+
+    public class FoundGeocache
+    {
+        public int PersonID { get; set; }
+        public Person Person { get; set; }
+        public int GeocaheID { get; set; }
+        public Geocache Geocache { get; set; }
+    }
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -34,69 +96,6 @@ namespace Geocaching
         private Location latestClickLocation;
 
         private Location gothenburg = new Location(57.719021, 11.991202);
-
-        class AppDbContext : DbContext
-        {
-            public DbSet<Person> Person { get; set; }
-            public DbSet<Geocache> Geocache { get; set; }
-            protected override void OnConfiguring(DbContextOptionsBuilder options)
-            {
-                options.UseSqlServer(@"Data Source=(local)\SQLEXPRESS;Initial Catalog=Geocaching;Integrated Security=True");
-            }
-        }
-
-        public class Person
-        {
-            [Key]
-            public int ID { get; set; }
-            [Required]
-            [MaxLength(50)]
-            public string FirstName { get; set; }
-            [Required]
-            [MaxLength(50)]
-            public string LastName { get; set; }
-            [Required]
-            public float Latitude { get; set; }
-            [Required]
-            public float Longitude { get; set; }
-            [Required]
-            [MaxLength(50)]
-            public string Country { get; set; }
-            [Required]
-            [MaxLength(50)]
-            public string City { get; set; }
-            [Required]
-            [MaxLength(50)]
-            public string StreetName { get; set; }
-            [Required]
-            public byte StreetNumber { get; set; }
-        }
-
-        public class Geocache
-        {
-            [Key]
-            public int ID { get; set; }
-            public Person Person { get; set; }
-            [Required]
-            public float Latitude { get; set; }
-            [Required]
-            public float Longitude { get; set; }
-            [Required]
-            [MaxLength(355)]
-            public string Content { get; set; }
-            [Required]
-            [MaxLength(255)]
-            public string Message { get; set; }
-
-        }
-
-        public class FoundGeocache
-        {
-            public int PersonID { get; set; }
-            public Person Person { get; set; }
-            public int GeocaheID { get; set; }
-            public Geocache Geocache { get; set; }
-        }
 
         public MainWindow()
         {
