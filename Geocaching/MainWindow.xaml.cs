@@ -43,9 +43,9 @@ namespace Geocaching
         [MaxLength(50)]
         public string LastName { get; set; }
         [Required]
-        public float Latitude { get; set; }
+        public double Latitude { get; set; }
         [Required]
-        public float Longitude { get; set; }
+        public double Longitude { get; set; }
         [Required]
         [MaxLength(50)]
         public string Country { get; set; }
@@ -66,9 +66,9 @@ namespace Geocaching
         public int ID { get; set; }
         public Person Person { get; set; }
         [Required]
-        public float Latitude { get; set; }
+        public double Latitude { get; set; }
         [Required]
-        public float Longitude { get; set; }
+        public double Longitude { get; set; }
         [Required]
         [MaxLength(255)]
         public string Content { get; set; }
