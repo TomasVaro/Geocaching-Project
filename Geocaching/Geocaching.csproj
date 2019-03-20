@@ -166,17 +166,9 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Migrations\20190319105641_First.cs" />
-    <Compile Include="Migrations\20190319105641_First.designer.cs">
-      <DependentUpon>20190319105641_First.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\20190319123724_AddedJointabel.cs" />
-    <Compile Include="Migrations\20190319123724_AddedJointabel.designer.cs">
-      <DependentUpon>20190319123724_AddedJointabel.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\20190319124958_ChangedByteToDouble.cs" />
-    <Compile Include="Migrations\20190319124958_ChangedByteToDouble.designer.cs">
-      <DependentUpon>20190319124958_ChangedByteToDouble.cs</DependentUpon>
+    <Compile Include="Migrations\20190320142433_First.cs" />
+    <Compile Include="Migrations\20190320142433_First.designer.cs">
+      <DependentUpon>20190320142433_First.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\AppDbContextModelSnapshot.cs" />
     <Compile Include="PersonDialog.xaml.cs">

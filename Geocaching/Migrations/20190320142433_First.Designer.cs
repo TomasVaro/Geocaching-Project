@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Geocaching.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20190319123724_AddedJointabel")]
-    partial class AddedJointabel
+    [Migration("20190320142433_First")]
+    partial class First
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -43,10 +43,6 @@ namespace Geocaching.Migrations
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasMaxLength(255);
-
-                    b.Property<float>("Latitude");
-
-                    b.Property<float>("Longitude");
 
                     b.Property<string>("Message")
                         .IsRequired()
@@ -83,10 +79,6 @@ namespace Geocaching.Migrations
                         .IsRequired()
                         .HasMaxLength(50);
 
-                    b.Property<float>("Latitude");
-
-                    b.Property<float>("Longitude");
-
                     b.Property<string>("StreetName")
                         .IsRequired()
                         .HasMaxLength(50);
@@ -114,8 +106,55 @@ namespace Geocaching.Migrations
             modelBuilder.Entity("Geocaching.Geocache", b =>
                 {
                     b.HasOne("Geocaching.Person", "Person")
-                        .WithMany()
+                        .WithMany("Geocache")
                         .HasForeignKey("PersonID");
+
+                    b.OwnsOne("Geocaching.Coordinates", "Coordinates", b1 =>
+                        {
+                            b1.Property<int>("GeocacheID")
+                                .ValueGeneratedOnAdd()
+                                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                            b1.Property<double>("Latitude")
+                                .HasColumnName("Latitude");
+
+                            b1.Property<double>("Longitude")
+                                .HasColumnName("Longitude");
+
+                            b1.HasKey("GeocacheID");
+
+                            b1.ToTable("Geocache");
+
+                            b1.HasOne("Geocaching.Geocache")
+                                .WithOne("Coordinates")
+                                .HasForeignKey("Geocaching.Coordinates", "GeocacheID")
+                                .OnDelete(DeleteBehavior.Cascade);
+                        });
+                });
+
+            modelBuilder.Entity("Geocaching.Person", b =>
+                {
+                    b.OwnsOne("Geocaching.Coordinates", "Coordinates", b1 =>
+                        {
+                            b1.Property<int>("PersonID")
+                                .ValueGeneratedOnAdd()
+                                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                            b1.Property<double>("Latitude")
+                                .HasColumnName("Latitude");
+
+                            b1.Property<double>("Longitude")
+                                .HasColumnName("Longitude");
+
+                            b1.HasKey("PersonID");
+
+                            b1.ToTable("Person");
+
+                            b1.HasOne("Geocaching.Person")
+                                .WithOne("Coordinates")
+                                .HasForeignKey("Geocaching.Coordinates", "PersonID")
+                                .OnDelete(DeleteBehavior.Cascade);
+                        });
                 });
 #pragma warning restore 612, 618
         }
