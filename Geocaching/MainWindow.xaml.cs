@@ -117,6 +117,7 @@ namespace Geocaching
             }
             set
             {
+                //Avrundar latitude till 6 decimaler
                 latitude = double.Parse(value.ToString("0.000000"));
             }
         }
@@ -305,6 +306,10 @@ namespace Geocaching
         //Här läggs personuppgifterna in
         private void OnAddPersonClick(object sender, RoutedEventArgs args)
         {
+            database = new AppDbContext();
+            Person person = new Person();
+            Coordinates coordinates = new Coordinates();
+
             var dialog = new PersonDialog();
             dialog.Owner = this;
             dialog.ShowDialog();
@@ -322,6 +327,20 @@ namespace Geocaching
             // Add person to map and database here.
             
             var pin = AddPin(latestClickLocation, "Person", Colors.Blue);
+
+            person.Coordinates = coordinates;
+            person.FirstName = firstName;
+            person.LastName = lastName;
+            person.Country = country;
+            person.City = city;
+            person.StreetName = streetName;
+            person.StreetNumber = (byte)streetNumber;
+            coordinates.Longitude = latestClickLocation.Longitude;
+            coordinates.Latitude = latestClickLocation.Latitude;
+
+            database.Add(person);
+            database.SaveChanges();
+            database.Dispose();
 
             pin.MouseDown += (s, a) =>
             {
