@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Geocaching.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20190320142433_First")]
+    [Migration("20190326211625_First")]
     partial class First
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
