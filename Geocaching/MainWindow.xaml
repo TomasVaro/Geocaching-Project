@@ -11,7 +11,7 @@
         <m:Map x:Name="map"/>
         <StackPanel Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Top">
             <Button Margin="5" Padding="5" Click="OnLoadFromFileClick">Load From File</Button>
-            <Button Margin="5" Padding="5" Click="OnSaveToFileClick">Save To File</Button>
+            <Button Margin="5" Padding="5" Click="OnSaveToFileClickAsync">Save To File</Button>
         </StackPanel>
     </Grid>
 </Window>
