@@ -431,7 +431,7 @@ namespace Geocaching
 
         #region Load/save from/to database
         //Läser in från en fil
-        private async void OnLoadFromFileClickAsync(object sender, RoutedEventArgs args)
+        private async void OnLoadFromFileClick(object sender, RoutedEventArgs args)
         {
             var dialog = new Microsoft.Win32.OpenFileDialog();
             dialog.DefaultExt = ".txt";
@@ -615,7 +615,7 @@ namespace Geocaching
 
 
         //Sparar till en fil
-        private async void OnSaveToFileClickAsync(object sender, RoutedEventArgs args)
+        private async void OnSaveToFileClick(object sender, RoutedEventArgs args)
         {
             var dialog = new Microsoft.Win32.SaveFileDialog();
             dialog.DefaultExt = ".txt";

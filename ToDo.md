@@ -1,7 +1,7 @@
 # Projekt Geocaching
 ## Att göra:
 ### Krav för G
-- [ ] Programmet ska kunna läsa in information om geocaches och personer från en textfil med ett förutbestämt format (exempeldata finns i Geocaches.txt). Informationen ska dels visas upp i programmets GUI och dels sparas i databasen.
+- [x] Programmet ska kunna läsa in information om geocaches och personer från en textfil med ett förutbestämt format (exempeldata finns i Geocaches.txt). Informationen ska dels visas upp i programmets GUI och dels sparas i databasen.
   - [x] Ni får inte använda SQL-kod för att skriva informationen till databasen utan måste använda EF Core till detta. (Med andra ord får ni inte importera och använda er av System.Data.SqlClient.)
   - [x] Informationen som läses in ska ersätta all existerande information i databasen.
 - [x] Programmet ska kunna spara ner all information om geocaches och personer till en textfil med samma format som programmet kan läsa in.
