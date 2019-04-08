@@ -341,7 +341,7 @@ namespace Geocaching
         private async void OnAddGeocacheClickAsync(object sender, RoutedEventArgs args)
         {
 
-            var database = new AppDbContext();            
+            var database = new AppDbContext();
             if (ActivePersonID == 0)
             {
                 MessageBox.Show("Please select/add a person before adding a geocache.");
@@ -382,7 +382,7 @@ namespace Geocaching
                 database.SaveChanges();
 
                 await Task.Delay(0);
-            }            
+            }
         }
 
         //Här skapas person objektet och sparas till databasen vid höger-klick på kartan.
@@ -425,7 +425,7 @@ namespace Geocaching
             person.ID = 0;  //Får ej tas bort. Måste nollställas om man lägger till flera personpins efter varandra.
 
             //Uppdaterar alla pins
-            UpdateMap();            
+            UpdateMap();
         }
         #endregion
 
@@ -597,7 +597,7 @@ namespace Geocaching
                 }
                 database.SaveChanges();
                 await Task.Delay(0);
-            }            
+            }
             UpdateMap();
         }
 
