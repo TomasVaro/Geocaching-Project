@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Geocaching.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20190326211625_First")]
-    partial class First
+    [Migration("20190411182754_FirstMigration")]
+    partial class FirstMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -93,12 +93,12 @@ namespace Geocaching.Migrations
             modelBuilder.Entity("Geocaching.FoundGeocache", b =>
                 {
                     b.HasOne("Geocaching.Geocache", "Geocache")
-                        .WithMany("FoundGeocache")
+                        .WithMany("FoundGeocaches")
                         .HasForeignKey("GeocacheID")
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Geocaching.Person", "Person")
-                        .WithMany("FoundGeocache")
+                        .WithMany("FoundGeocaches")
                         .HasForeignKey("PersonID")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
@@ -106,10 +106,10 @@ namespace Geocaching.Migrations
             modelBuilder.Entity("Geocaching.Geocache", b =>
                 {
                     b.HasOne("Geocaching.Person", "Person")
-                        .WithMany("Geocache")
+                        .WithMany("Geocaches")
                         .HasForeignKey("PersonID");
 
-                    b.OwnsOne("Geocaching.Coordinates", "Coordinates", b1 =>
+                    b.OwnsOne("System.Device.Location.GeoCoordinate", "Coordinates", b1 =>
                         {
                             b1.Property<int>("GeocacheID")
                                 .ValueGeneratedOnAdd()
@@ -127,14 +127,14 @@ namespace Geocaching.Migrations
 
                             b1.HasOne("Geocaching.Geocache")
                                 .WithOne("Coordinates")
-                                .HasForeignKey("Geocaching.Coordinates", "GeocacheID")
+                                .HasForeignKey("System.Device.Location.GeoCoordinate", "GeocacheID")
                                 .OnDelete(DeleteBehavior.Cascade);
                         });
                 });
 
             modelBuilder.Entity("Geocaching.Person", b =>
                 {
-                    b.OwnsOne("Geocaching.Coordinates", "Coordinates", b1 =>
+                    b.OwnsOne("System.Device.Location.GeoCoordinate", "Coordinates", b1 =>
                         {
                             b1.Property<int>("PersonID")
                                 .ValueGeneratedOnAdd()
@@ -152,7 +152,7 @@ namespace Geocaching.Migrations
 
                             b1.HasOne("Geocaching.Person")
                                 .WithOne("Coordinates")
-                                .HasForeignKey("Geocaching.Coordinates", "PersonID")
+                                .HasForeignKey("System.Device.Location.GeoCoordinate", "PersonID")
                                 .OnDelete(DeleteBehavior.Cascade);
                         });
                 });

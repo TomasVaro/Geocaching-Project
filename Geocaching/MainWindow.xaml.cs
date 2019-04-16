@@ -22,6 +22,46 @@ using System.IO;
 namespace Geocaching
 {
     #region Classes
+    public class Person
+    {
+        public int ID { get; set; }
+        [Required, MaxLength(50)]
+        public string FirstName { get; set; }
+        [Required, MaxLength(50)]
+        public string LastName { get; set; }
+        public GeoCoordinate Coordinates { get; set; }
+        [Required, MaxLength(50)]
+        public string Country { get; set; }
+        [Required, MaxLength(50)]
+        public string City { get; set; }
+        [Required, MaxLength(50)]
+        public string StreetName { get; set; }
+        [Required]
+        public byte StreetNumber { get; set; }
+        public List<FoundGeocache> FoundGeocaches { get; set; }
+        public List<Geocache> Geocaches { get; set; }
+    }
+
+    public class Geocache
+    {
+        public int ID { get; set; }
+        public Person Person { get; set; }
+        public GeoCoordinate Coordinates { get; set; }
+        [Required, MaxLength(255)]
+        public string Content { get; set; }
+        [Required, MaxLength(255)]
+        public string Message { get; set; }
+        public List<FoundGeocache> FoundGeocaches { get; set; }
+    }
+
+    public class FoundGeocache
+    {
+        public int PersonID { get; set; }
+        public Person Person { get; set; }
+        public int GeocacheID { get; set; }
+        public Geocache Geocache { get; set; }
+    }
+
     public class AppDbContext : DbContext
     {
         public DbSet<Person> Person { get; set; }
@@ -50,78 +90,6 @@ namespace Geocaching
             });
         }
     }
-
-    public class Person
-    {
-        [Key]
-        public int ID { get; set; }
-        [Required, MaxLength(50)]
-        public string FirstName { get; set; }
-        [Required, MaxLength(50)]
-        public string LastName { get; set; }
-        public Coordinates Coordinates { get; set; }
-        [Required, MaxLength(50)]
-        public string Country { get; set; }
-        [Required, MaxLength(50)]
-        public string City { get; set; }
-        [Required, MaxLength(50)]
-        public string StreetName { get; set; }
-        [Required]
-        public byte StreetNumber { get; set; }
-        public List<FoundGeocache> FoundGeocache { get; set; }
-        public List<Geocache> Geocache { get; set; }
-    }
-
-    public class Geocache
-    {
-        [Key]
-        public int ID { get; set; }
-        public Person Person { get; set; }
-        public Coordinates Coordinates { get; set; }
-        [Required, MaxLength(255)]
-        public string Content { get; set; }
-        [Required, MaxLength(255)]
-        public string Message { get; set; }
-        public List<FoundGeocache> FoundGeocache { get; set; }
-    }
-
-    public class FoundGeocache
-    {
-        public int PersonID { get; set; }
-        public Person Person { get; set; }
-        public int GeocacheID { get; set; }
-        public Geocache Geocache { get; set; }
-    }
-
-    public class Coordinates : GeoCoordinate
-    {
-        private double latitude;
-        [Required]
-        public double Latitude
-        {
-            get
-            {
-                return latitude;
-            }
-            set
-            {
-                latitude = double.Parse(value.ToString("0.000000"));
-            }
-        }
-        private double longitude;
-        [Required]
-        public double Longitude
-        {
-            get
-            {
-                return longitude;
-            }
-            set
-            {
-                longitude = double.Parse(value.ToString("0.000000"));
-            }
-        }
-    }
     #endregion
 
     /// <summary>
@@ -131,23 +99,19 @@ namespace Geocaching
     {
         #region Startup
         public int ActivePersonID;
-        static AppDbContext database;
         Color color = new Color();
         Person person = new Person();
         Geocache geocache = new Geocache() { Person = new Person() };
         FoundGeocache foundGeocache = new FoundGeocache();
-        Coordinates coordinates = new Coordinates();
+        GeoCoordinate coordinates = new GeoCoordinate();
 
         // Contains the ID string needed to use the Bing map.
-        // Instructions here: https://docs.microsoft.com/en-us/bingmaps/getting-started/bing-maps-dev-center-help/getting-a-bing-maps-key
         private const string applicationId = "AsAxqI2jwZYAKchAD0G8TytQ0ZavSgXYlloAUiMBEIqXLq93ERbTF2pgs2V2e6tT";
 
         private MapLayer layer;
 
         // Contains the location of the latest click on the map.
-        // The Location object in turn contains information like longitude and latitude.
         private Location latestClickLocation;
-
         private Location gothenburg = new Location(57.719021, 11.991202);
         #endregion
 
@@ -162,12 +126,10 @@ namespace Geocaching
                 MessageBox.Show("Please set the applicationId variable before running this program.");
                 Environment.Exit(0);
             }
-
             CreateMap();
             UpdateMap();
         }
 
-        //Behöver inte göras något här
         private void CreateMap()
         {
             map.CredentialsProvider = new ApplicationIdCredentialsProvider(applicationId);
@@ -177,7 +139,7 @@ namespace Geocaching
             map.Children.Add(layer);
             WindowState = WindowState.Maximized;
 
-            // Återställer alla pins till blå/grå vid klick på kartan.
+            // Resets color on all pins to blue/gray on map click.
             MouseDown += (sender, e) =>
             {
                 var point = e.GetPosition(this);
@@ -193,59 +155,73 @@ namespace Geocaching
 
             var addPersonMenuItem = new MenuItem { Header = "Add Person" };
             map.ContextMenu.Items.Add(addPersonMenuItem);
-            addPersonMenuItem.Click += OnAddPersonClickAsync;
+            addPersonMenuItem.Click += BeginOnAddPersonClick;
 
             var addGeocacheMenuItem = new MenuItem { Header = "Add Geocache" };
             map.ContextMenu.Items.Add(addGeocacheMenuItem);
-            addGeocacheMenuItem.Click += OnAddGeocacheClickAsync;
+            addGeocacheMenuItem.Click += BeginOnAddGeocacheClick;
         }
         #endregion
 
         #region Update Pins and set pin-colors and tooltip
         private void UpdateMap()
         {
-            // It is recommended (but optional) to use this method for setting the color and opacity of each pin after every user interaction that might change something.
-            // This method should then be called once after every significant action, such as clicking on a pin, clicking on the map, or clicking a context menu option.
-            ColorPersonPinsAsync();
-            ColorGeocachePinsAsync();
+            BeginColorPersonPins();
+            BeginColorGeocachePins();
         }
 
-        // Loopar igenom Person och sätter rätt färg på pinsen asynkront.
-        private async void ColorPersonPinsAsync()
+        // Loops through Person and gives the right color to the pins, asynchronously.
+        private async void BeginColorPersonPins()
         {
-            database = new AppDbContext();
-            foreach (var p in database.Person.Include(e => e.Geocache).Include(p => p.FoundGeocache).AsNoTracking())
+            using (var database = new AppDbContext())
             {
-                Location location = new Location(p.Coordinates.Latitude, p.Coordinates.Longitude);
-                string personToolTip = p.FirstName + " " + p.LastName + "\n" + p.StreetName + " " + p.StreetNumber + "\n" + p.City + "\n" + p.Country;
+                IEnumerable<Person> PersonAsync = new List<Person>();
+                var task = Task.Run(() =>
+                {
+                    PersonAsync = database.Person.Include(e => e.Geocaches).Include(p => p.FoundGeocaches).AsNoTracking();
+                });
+                await (task);
 
-                // Sätter blå färg på vald person-pin och ljusblå på övriga person-pins
-                if (ActivePersonID == p.ID || ActivePersonID == 0)
+                foreach (var p in PersonAsync)
                 {
-                    color = Colors.Blue;
-                }
-                else
-                {
-                    color = Color.FromRgb(0x47, 0x9D, 0xEE);
-                }
-                var pinPerson = AddPin(location, personToolTip, color);
+                    Location location = new Location(p.Coordinates.Latitude, p.Coordinates.Longitude);
+                    string personToolTip = p.FirstName + " " + p.LastName + "\n" + p.StreetName + " " + p.StreetNumber + "\n" + p.City + "\n" + p.Country;
 
-                pinPerson.MouseDown += (s, a) =>
-                {
-                    ActivePersonID = p.ID;
-                    UpdateMap();
-                    // Prevent click from being triggered on map.
-                    a.Handled = true;
-                };
-                await Task.Delay(1000);
+                    if (ActivePersonID == p.ID || ActivePersonID == 0)
+                    {
+                        color = Colors.Blue;
+                    }
+                    else
+                    {
+                        color = Color.FromRgb(0x47, 0x9D, 0xEE);
+                    }
+                    var pinPerson = AddPin(location, personToolTip, color);
+
+                    pinPerson.MouseDown += (s, a) =>
+                    {
+                        ActivePersonID = p.ID;
+                        UpdateMap();
+                        a.Handled = true;
+                    };
+                    // Put delay here to check asynchronisity on person-pins
+                    await Task.Delay(0);
+                }
             }
         }
 
-        // Loopar igenom Geocache och sätter rätt färg på pinsen asynkront.
-        private async void ColorGeocachePinsAsync()
+        // Loops through Geocache and gives the right color to the pins, asynchronously.
+        private async void BeginColorGeocachePins()
         {
-            database = new AppDbContext();
-            foreach (var g in database.Geocache.Include(g => g.Person).Include(g => g.FoundGeocache))
+            var database = new AppDbContext();
+
+            IEnumerable<Geocache> GeocacheAsync = new List<Geocache>();
+            var task = Task.Run(() =>
+            {
+                GeocacheAsync = database.Geocache.Include(g => g.Person).Include(g => g.FoundGeocaches);
+            });
+            await (task);
+
+            foreach (var g in GeocacheAsync)
             {
                 Location locationGeocache = new Location(g.Coordinates.Latitude, g.Coordinates.Longitude);
                 string geocacheToolTip = "long:" + g.Coordinates.Longitude + "\nlat:    " + g.Coordinates.Latitude + "\nContent: "
@@ -264,33 +240,45 @@ namespace Geocaching
                 }
                 var pinGeocache = AddPin(locationGeocache, geocacheToolTip, color);
 
-                foreach (var f in g.FoundGeocache)
+                foreach (var f in g.FoundGeocaches)
                 {
                     if (f.PersonID == ActivePersonID)
                     {
                         pinGeocache = AddPin(locationGeocache, geocacheToolTip, Colors.Green);
                     }
                 }
+                // Put delay here to check asynchronisity on geocache-pins.
+                await Task.Delay(0);
 
-                // Körs vid klick på geocache-pinsen
-                pinGeocache.MouseDown += (s, a) =>
+                // Change color on Geocache-pins on click.
+                pinGeocache.MouseDown += async (s, a) =>
                 {
-                    // Tar fram alla gånger som klickad Geocache hittats av vem som helst
-                    var activeGeocache = database.Geocache.Include(e => e.Person).First(gc => gc.Coordinates.Latitude == locationGeocache.Latitude && g.Coordinates.Longitude == locationGeocache.Longitude);
-                    // Lista med geocacheIDs som ActivePerson hittat
-                    var ActivePersonFoundGeocachIDs = database.FoundGeocache.Where(f => f.PersonID == ActivePersonID).Select(f => f.GeocacheID).ToList();
+                    a.Handled = true;
+                    Geocache activeGeocache = new Geocache();
+                    List<int> ActivePersonFoundGeocachIDs = new List<int>();
 
-                    // Om ActivePerson inte är den som själv placerat ut geocachen och ActivePerson är vald...
+                    var task1 = Task.Run(() =>
+                    {
+                        activeGeocache = database.Geocache.Include(e => e.Person).First(gc => gc.Coordinates.Latitude == locationGeocache.Latitude && g.Coordinates.Longitude == locationGeocache.Longitude);
+                        ActivePersonFoundGeocachIDs = database.FoundGeocache.Where(f => f.PersonID == ActivePersonID).Select(f => f.GeocacheID).ToList();
+                    });
+                    await (task1);
+
+                    // If ActivePerson is selected and is not the one who placed the geocache...
                     if (ActivePersonID != activeGeocache.Person.ID && ActivePersonID != 0)
                     {
-                        //... och ActivePerson redan hittat geocachen så byt färg till rött och ta bort från FoundGeocache tabellen.
+                        //... and ActivePerson already found this geocachen, then change the pin-color to red and remove from FoundGeocache.
                         if (ActivePersonFoundGeocachIDs.Contains(activeGeocache.ID))
                         {
                             pinGeocache = AddPin(locationGeocache, geocacheToolTip, Colors.Red);
-                            var foundGeocacheToDelete = database.FoundGeocache.First(fg => (fg.PersonID == ActivePersonID) && (fg.GeocacheID == activeGeocache.ID));
-                            database.Remove(database.FoundGeocache.Single(fg => fg.GeocacheID == foundGeocacheToDelete.GeocacheID && fg.PersonID == ActivePersonID));
+                            var task2 = Task.Run(() =>
+                            {
+                                var foundGeocacheToDelete = database.FoundGeocache.First(fg => (fg.PersonID == ActivePersonID) && (fg.GeocacheID == activeGeocache.ID));
+                                database.Remove(database.FoundGeocache.Single(fg => fg.GeocacheID == foundGeocacheToDelete.GeocacheID && fg.PersonID == ActivePersonID));
+                            });
+                            await (task2);
                         }
-                        // Annars byt färg till grönt och lägg till i FoundGeocache tabellen.
+                        // Else change pin-color to green and add to FoundGeocache.
                         else
                         {
                             pinGeocache = AddPin(locationGeocache, geocacheToolTip, Colors.Green);
@@ -301,17 +289,15 @@ namespace Geocaching
                             };
                             database.Add(foundGeocache);
                         }
-                        database.SaveChanges();
+                        var task3 = Task.Run(() =>
+                        {
+                            database.SaveChanges();
+                        });
+                        await (task3);
+
                         UpdateMap();
-                        a.Handled = true;
-                    }
-                    // Om klickar på en svart eller grå geo-pin så ändra inte geopin-färgerna.
-                    else
-                    {
-                        a.Handled = true;
                     }
                 };
-                await Task.Delay(500);
             }
         }
 
@@ -322,7 +308,7 @@ namespace Geocaching
             UpdateMap();
         }
 
-        //Skapar en pin med färg och tooltip
+        // Creates a pin with color and tooltip
         private Pushpin AddPin(Location location, string tooltip, Color color)
         {
             var pin = new Pushpin();
@@ -336,101 +322,105 @@ namespace Geocaching
         }
         #endregion
 
-        #region Create new Person & Geocache objects & pins
-        //Här skapas geocache objektet och sparas till databasen vid höger-klick på kartan.
-        private async void OnAddGeocacheClickAsync(object sender, RoutedEventArgs args)
+        #region On map-click create new Person & Geocache objects & pins
+        // Here the geocache object and pin is created and saved to database on map right-click.
+        private async void BeginOnAddGeocacheClick(object sender, RoutedEventArgs args)
         {
+            using (var database = new AppDbContext())
+            {
+                if (ActivePersonID == 0)
+                {
+                    MessageBox.Show("Please select/add a person before adding a geocache.");
+                }
+                else
+                {
+                    var dialog = new GeocacheDialog();
+                    dialog.Owner = this;
+                    dialog.ShowDialog();
+                    if (dialog.DialogResult == false)
+                    {
+                        return;
+                    }
+                    string contents = dialog.GeocacheContents;
+                    string message = dialog.GeocacheMessage;
 
-            var database = new AppDbContext();
-            if (ActivePersonID == 0)
-            {
-                MessageBox.Show("Please select/add a person before adding a geocache.");
+                    geocache.Coordinates = coordinates;
+                    geocache.Content = contents;
+                    geocache.Message = message;
+                    coordinates.Longitude = latestClickLocation.Longitude;
+                    coordinates.Latitude = latestClickLocation.Latitude;
+
+                    var persons = database.Person.Include(p => p.Geocaches).Where(p => p.ID == ActivePersonID).ToArray();
+
+                    foreach (var p in persons)
+                    {
+                        string geocacheToolTip = "long: " + coordinates.Longitude + "\nlat:    " + coordinates.Latitude + "\nContent: " + contents
+                            + "\nMessage: " + message + "\nPlaced by: " + p.FirstName + " " + p.LastName;
+                        var pin = AddPin(latestClickLocation, geocacheToolTip, Colors.Black);
+                    }
+
+                    geocache.Person.ID = ActivePersonID;
+                    geocache.ID = 0;
+
+                    var task = Task.Run(() =>
+                    {
+                        database.Add(geocache);
+                        database.SaveChanges();
+                    });
+                    await (task);
+                }
             }
-            else
+        }
+
+        // Here the person object and pin is created and saved to database on map right-click.
+        private async void BeginOnAddPersonClick(object sender, RoutedEventArgs args)
+        {
+            using (var database = new AppDbContext())
             {
-                // Läser in från kartans AddGeocache-fönster.
-                var dialog = new GeocacheDialog();
+                var dialog = new PersonDialog();
                 dialog.Owner = this;
                 dialog.ShowDialog();
                 if (dialog.DialogResult == false)
                 {
                     return;
                 }
-                string contents = dialog.GeocacheContents;
-                string message = dialog.GeocacheMessage;
 
-                // Add geocache to map and database here.
-                geocache.Coordinates = coordinates;
-                geocache.Content = contents;
-                geocache.Message = message;
+                string firstName = dialog.PersonFirstName;
+                string lastName = dialog.PersonLastName;
+                string city = dialog.AddressCity;
+                string country = dialog.AddressCountry;
+                string streetName = dialog.AddressStreetName;
+                int streetNumber = dialog.AddressStreetNumber;
+
+                person.Coordinates = coordinates;
+                person.FirstName = firstName;
+                person.LastName = lastName;
+                person.Country = country;
+                person.City = city;
+                person.StreetName = streetName;
+                person.StreetNumber = (byte)streetNumber;
                 coordinates.Longitude = latestClickLocation.Longitude;
                 coordinates.Latitude = latestClickLocation.Latitude;
 
-                var persons = database.Person.Include(p => p.Geocache).Where(p => p.ID == ActivePersonID).ToArray();
+                string personToolTip = person.FirstName + " " + person.LastName + "\n" + person.StreetName + " " + person.StreetNumber + "\n" + person.City + "\n" + person.Country;
+                var pin = AddPin(latestClickLocation, personToolTip, Colors.Blue);
 
-                foreach (var p in persons)
+                var task = Task.Run(() =>
                 {
-                    string geocacheToolTip = "long: " + coordinates.Longitude + "\nlat:    " + coordinates.Latitude + "\nContent: " + contents
-                        + "\nMessage: " + message + "\nPlaced by: " + p.FirstName + " " + p.LastName;
-                    var pin = AddPin(latestClickLocation, geocacheToolTip, Colors.Black);
-                }
+                    database.Add(person);
+                    database.SaveChanges();
+                });
+                await (task);
 
-                geocache.Person.ID = ActivePersonID;
-                geocache.ID = 0; //Får ej tas bort. Måste nollställas om man lägger till flera geopins efter varandra.
-
-                database.Add(geocache);
-                database.SaveChanges();
-
-                await Task.Delay(0);
+                ActivePersonID = person.ID;
+                person.ID = 0;
+                UpdateMap();
             }
-        }
-
-        //Här skapas person objektet och sparas till databasen vid höger-klick på kartan.
-        private async void OnAddPersonClickAsync(object sender, RoutedEventArgs args)
-        {
-            //Läser in från kartans AddPerson-fönster.
-            var database = new AppDbContext();
-            var dialog = new PersonDialog();
-            dialog.Owner = this;
-            dialog.ShowDialog();
-            if (dialog.DialogResult == false)
-            {
-                return;
-            }
-
-            string firstName = dialog.PersonFirstName;
-            string lastName = dialog.PersonLastName;
-            string city = dialog.AddressCity;
-            string country = dialog.AddressCountry;
-            string streetName = dialog.AddressStreetName;
-            int streetNumber = dialog.AddressStreetNumber;
-
-            // Add person to map and database here.  
-            person.Coordinates = coordinates;
-            person.FirstName = firstName;
-            person.LastName = lastName;
-            person.Country = country;
-            person.City = city;
-            person.StreetName = streetName;
-            person.StreetNumber = (byte)streetNumber;
-            coordinates.Longitude = latestClickLocation.Longitude;
-            coordinates.Latitude = latestClickLocation.Latitude;
-
-            database.Add(person);
-            database.SaveChanges();
-
-            await Task.Delay(0);
-
-            ActivePersonID = person.ID;
-            person.ID = 0;  //Får ej tas bort. Måste nollställas om man lägger till flera personpins efter varandra.
-
-            //Uppdaterar alla pins
-            UpdateMap();
         }
         #endregion
 
         #region Load/save from/to database
-        //Läser in från en fil
+        // Load from file.
         private async void OnLoadFromFileClick(object sender, RoutedEventArgs args)
         {
             var dialog = new Microsoft.Win32.OpenFileDialog();
@@ -442,16 +432,29 @@ namespace Geocaching
                 return;
             }
             string path = dialog.FileName;
-            ClearDatabaseAsync();
 
-            // Read the selected file here.
+            // Clear database and reset map.
+            using (var database = new AppDbContext())
+            {
+                var task = Task.Run(() =>
+                {
+                    database.Person.RemoveRange(database.Person);
+                    database.Geocache.RemoveRange(database.Geocache);
+                    database.SaveChanges();
+                });
+                await (task);
 
-            List<Person> persons = new List<Person> { };
-            string text = File.ReadAllText(path, Encoding.Default);
-            string[] parts = text.Split(new string[] { Environment.NewLine + Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+                ActivePersonID = 0;
+                layer.Children.Clear();
+            }
 
-            // NOVAK: 1. Loop för att få person objekter med sina egna geocaches till listor 
-            foreach (string part in parts)
+            // Read and split selected file here.
+            List<Person> personsTotalList = new List<Person> { };
+            string textFromFile = File.ReadAllText(path, Encoding.Default);
+            string[] textParts = textFromFile.Split(new string[] { Environment.NewLine + Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Loop to get person objects and there placed geocaches to lists.
+            foreach (string part in textParts)
             {
                 List<Geocache> geocaches = new List<Geocache> { };
                 string[] lines = part.Split('\n');
@@ -459,14 +462,13 @@ namespace Geocaching
                 foreach (string line in lines)
                 {
                     if (char.IsDigit(line[0]))
-
                     {
                         string[] values = line.Split('|');
                         Geocache g = new Geocache
                         {
                             Content = values[3].Trim(),
                             Message = values[4].Trim(),
-                            Coordinates = new Coordinates
+                            Coordinates = new GeoCoordinate
                             {
                                 Latitude = Convert.ToDouble(values[1]),
                                 Longitude = Convert.ToDouble(values[2])
@@ -485,40 +487,39 @@ namespace Geocaching
                             City = values[3].Trim(),
                             StreetName = values[4].Trim(),
                             StreetNumber = Convert.ToByte(values[5]),
-                            Geocache = geocaches,
-                            Coordinates = new Coordinates
+                            Geocaches = geocaches,
+                            Coordinates = new GeoCoordinate
                             {
                                 Latitude = Convert.ToDouble(values[6]),
                                 Longitude = Convert.ToDouble(values[7])
                             }
                         };
-                        persons.Add(p);
+                        personsTotalList.Add(p);
                     }
                 }
             }
-            // NOVAK : 2.Loop för att få alla geocaches i en lista - geocachesTotalList
+
+            // Loop to put all geocaches in geocachesTotalList.
             List<Geocache> geocachesTotalList = new List<Geocache> { };
-            foreach (Person p in persons)
+            foreach (Person p in personsTotalList)
             {
-                foreach (Geocache g in p.Geocache)
+                foreach (Geocache g in p.Geocaches)
                 {
                     geocachesTotalList.Add(g);
                 }
             }
 
-            // NOVAK : 3.Loop för att få FoundGeocaches och kopplingar för join-tabell till dictionary
-            Dictionary<Person, List<int>> fgdict = new Dictionary<Person, List<int>>();
-            foreach (string part in parts)
+            // Loop to get FoundGeocaches and connections to join-tabel to a dictionary.
+            Dictionary<Person, List<int>> foundGeocachesDictionary = new Dictionary<Person, List<int>>();
+            foreach (string part in textParts)
             {
                 List<int> indexes = new List<int>();
-
                 string[] lines = part.Split('\n');
 
                 foreach (string line in lines)
                 {
                     string ln1 = line.Substring(6);
                     if (line.StartsWith("Found:") && ln1 != " " && ln1 != "")
-
                     {
                         string[] numbers = ln1.Split(',');
                         foreach (string n in numbers)
@@ -530,20 +531,20 @@ namespace Geocaching
                     else if (line.StartsWith("Found:") == false && char.IsDigit(line[0]) == false)
                     {
                         string[] values = line.Split('|');
-                        foreach (Person p in persons)
+                        foreach (Person p in personsTotalList)
                         {
                             if (p.FirstName == values[0].Trim() && p.LastName == values[1].Trim())
                             {
-                                fgdict[p] = indexes;
+                                foundGeocachesDictionary[p] = indexes;
                             }
                         };
                     }
                 }
             }
 
-            //NOVAK:loopa dictionary och gjora en lista med FoundGeocaches
+            // Loop through dictionary and make a lista of FoundGeocaches.
             List<FoundGeocache> foundGeocaches = new List<FoundGeocache>();
-            foreach (KeyValuePair<Person, List<int>> pair in fgdict)
+            foreach (KeyValuePair<Person, List<int>> pair in foundGeocachesDictionary)
             {
                 foreach (int i in pair.Value)
                 {
@@ -556,65 +557,55 @@ namespace Geocaching
                 }
             }
 
-            //NOVAK: Loopa alla personer och lägg till dem i foundGeocaches listan
-            foreach (Person p in persons)
+            // Loop through all persons and add to foundGeocaches list.
+            foreach (Person p in personsTotalList)
             {
-                p.FoundGeocache = new List<FoundGeocache>();
+                p.FoundGeocaches = new List<FoundGeocache>();
                 foreach (FoundGeocache fg in foundGeocaches)
                 {
                     if (fg.Person.FirstName == p.FirstName && fg.Person.LastName == p.LastName)
                     {
-                        p.FoundGeocache.Add(fg);
+                        p.FoundGeocaches.Add(fg);
                     }
                 }
             }
 
-            //NOVAK: Loopa alla geocaches och lägg till dem i foundGeocaches listan
+            // Loop through all geocaches and add to foundGeocaches list.
             foreach (Geocache g in geocachesTotalList)
             {
-                g.FoundGeocache = new List<FoundGeocache>();
+                g.FoundGeocaches = new List<FoundGeocache>();
                 foreach (FoundGeocache fg in foundGeocaches)
                 {
                     if (fg.Geocache.Message == g.Message && fg.Geocache.Content == g.Content)
                     {
-                        g.FoundGeocache.Add(fg);
+                        g.FoundGeocaches.Add(fg);
                     }
                 }
             }
 
-            using (database = new AppDbContext())
+            // Save all persons and geocaches to database, asynchronously.
+            using (var database = new AppDbContext())
             {
-                //NOVAK: Add persons till databas
-                foreach (Person p in persons)
+                foreach (Person p in personsTotalList)
                 {
                     database.Add(p);
                 }
 
-                //NOVAK: Add geocaches till databas
                 foreach (Geocache g in geocachesTotalList)
                 {
                     database.Add(g);
                 }
-                database.SaveChanges();
-                await Task.Delay(0);
+
+                var task = Task.Run(() =>
+                {
+                    database.SaveChanges();
+                });
+                await (task);
             }
             UpdateMap();
         }
 
-
-        private async void ClearDatabaseAsync()
-        {
-            var database = new AppDbContext();
-            database.Person.RemoveRange(database.Person);
-            database.Geocache.RemoveRange(database.Geocache);
-            database.SaveChanges();
-            ActivePersonID = 0;
-            layer.Children.Clear();
-            await Task.Delay(0);
-        }
-
-
-        //Sparar till en fil
+        // Save to file
         private async void OnSaveToFileClick(object sender, RoutedEventArgs args)
         {
             var dialog = new Microsoft.Win32.SaveFileDialog();
@@ -629,14 +620,25 @@ namespace Geocaching
 
             string path = dialog.FileName;
 
-            // Write to the selected file here.
-            using (database = new AppDbContext())
+            using (var database = new AppDbContext())
             {
                 string all = "";
 
-                var minGeocacheID = database.Geocache.Min(g => (int)g.ID);
+                int minGeocacheID = 0;
+                var task = Task.Run(() =>
+                {
+                    minGeocacheID = database.Geocache.Min(g => (int)g.ID);
+                });
+                await (task);
 
-                foreach (var x in database.Person.Include(e => e.Geocache).Include(p => p.FoundGeocache).ThenInclude(fg => fg.Person).Include(p => p.FoundGeocache).ThenInclude(fg => fg.Geocache).AsNoTracking())
+                IEnumerable<Person> PersonAsync = new List<Person>();
+                var task1 = Task.Run(() =>
+                {
+                    PersonAsync = database.Person.Include(e => e.Geocaches).Include(p => p.FoundGeocaches).ThenInclude(fg => fg.Person).Include(p => p.FoundGeocaches).ThenInclude(fg => fg.Geocache).AsNoTracking();
+                });
+                await (task1);
+
+                foreach (var x in PersonAsync)
                 {
                     string geocachesString = "";
                     string foundString = "";
@@ -644,12 +646,12 @@ namespace Geocaching
                     string personString = (x.FirstName + " | " + x.LastName + " | " + x.Country + " | " + x.City + " | " + x.StreetName + " | " + x.StreetNumber + " | " +
                             x.Coordinates.Latitude + " | " + x.Coordinates.Longitude);
 
-                    foreach (Geocache g in x.Geocache)
+                    foreach (Geocache g in x.Geocaches)
                     {
                         geocachesString = geocachesString + ((g.ID - minGeocacheID + 1) + " | " + g.Coordinates.Latitude + " | " + g.Coordinates.Longitude + " | " + g.Content + " | " + g.Message + "\r\n");
                     }
 
-                    foreach (FoundGeocache fg in x.FoundGeocache)
+                    foreach (FoundGeocache fg in x.FoundGeocaches)
                     {
                         foundString = foundString + (fg.Geocache.ID - minGeocacheID + 1 + ", ");
                     }
@@ -662,7 +664,6 @@ namespace Geocaching
                     {
                         all = all + (personString + "\r\n" + geocachesString + "Found: " + foundString + "\r\n") + "\r\n";
                     }
-                    await Task.Delay(0);
                 }
                 File.WriteAllText(path, all, Encoding.Default);
             }
