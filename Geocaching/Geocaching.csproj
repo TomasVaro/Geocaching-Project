@@ -171,6 +171,10 @@
     <Compile Include="Migrations\20190411182754_FirstMigration.designer.cs">
       <DependentUpon>20190411182754_FirstMigration.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\20190911090812_AzureMigration.cs" />
+    <Compile Include="Migrations\20190911090812_AzureMigration.designer.cs">
+      <DependentUpon>20190911090812_AzureMigration.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\AppDbContextModelSnapshot.cs" />
     <Compile Include="PersonDialog.xaml.cs">
       <DependentUpon>PersonDialog.xaml</DependentUpon>
